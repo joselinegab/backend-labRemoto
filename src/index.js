@@ -1,11 +1,19 @@
 const express = require('express');
 const mqtt = require('mqtt');
+const cors = require('cors');
+
 
 const app = express();
 let mqttData = null;
 
+const corsOptions = {
+  origin: '*',
+  optionsSuccessStatus: 200,
+};
 
 const PORT = process.env.PORT || 3000;
+
+
 
 const mqttOptions = {
   username: 'proyecto',
@@ -54,6 +62,9 @@ app.get('/picoscope', (req, res) => {
   }
 });
 
+app.use(cors(corsOptions)); 
+app.options('*', cors(corsOptions)); 
+app.use(express.json());
 
 //PUBLICAR MENSAJE
 // const mensaje = "Ola desde api";
