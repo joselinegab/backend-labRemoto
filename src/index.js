@@ -5,6 +5,11 @@ const cors = require('cors');
 
 const app = express();
 let mqttData = null;
+let mqttData2 = null;
+let mqttDataLuz = null;
+let mqttDataHz = null;
+let mqttDataMv = null;
+let mqttDataV = null;
 
 // Configuración de CORS
 const corsOptions = {
@@ -46,10 +51,16 @@ mqttClient.on('error', (error) => {
 //     res.json({ data });
 //   }
 // });
-const mqttSus = mqttClient.subscribe('test/server/channel_A', { qos: 2});
-
 const mqttCon = mqttClient.subscribe('test/server', { qos: 2 });
 
+const mqttSus = mqttClient.subscribe('test/server/channel_A', { qos: 2});
+
+const mqttConf = mqttClient.subscribe('test/multimetro', { qos: 2 });
+const mqtMultiValor = mqttClient.subscribe('test/multimetro/valores', { qos: 2});
+const mqtMultiLuz = mqttClient.subscribe('test/multimetro/luz', { qos: 2});
+const mqtMultiMv = mqttClient.subscribe('test/multimetro/Mv', { qos: 2});
+const mqtMultiHz = mqttClient.subscribe('test/multimetro/Hz', { qos: 2});
+const mqtMultiV = mqttClient.subscribe('test/multimetro/V', { qos: 2});
 // Manejar mensajes MQTT cuando se reciban
 mqttSus.on('message', (topic, message) => {
   if (topic === 'test/server/channel_A') {
@@ -58,6 +69,39 @@ mqttSus.on('message', (topic, message) => {
   }
 });
 
+mqtMultiValor.on('message', (topic, message) => {
+  if (topic === 'test/multimetro/valores') {
+    mqttData2 = message.toString();
+    console.log('Mensajes: ',mqttData2);
+  }
+});
+
+mqtMultiLuz.on('message', (topic, message) => {
+  if (topic === 'test/multimetro/luz') {
+    mqttDataLuz = message.toString();
+    console.log('Mensajes: ',mqttDataLuz);
+  }
+});
+
+mqtMultiMv.on('message', (topic, message) => {
+  if (topic === 'test/multimetro/Mv') {
+    mqttDataMv = message.toString();
+    console.log('Mensajes: ',mqttDataMv);
+  }
+});
+
+mqtMultiHz.on('message', (topic, message) => {
+  if (topic === 'test/multimetro/Hz') {
+    mqttDataHz = message.toString();
+    console.log('Mensajes: ',mqttDataHz);
+  }
+});
+mqtMultiV.on('message', (topic, message) => {
+  if (topic === 'test/multimetro/V') {
+    mqttDataV = message.toString();
+    console.log('Mensajes: ',mqttDataV);
+  }
+});
 
 
 // Ruta de ejemplo para obtener datos MQTT como respuesta JSON
@@ -73,6 +117,65 @@ app.get('/picoscope', (req, res) => {
   }
 });
 
+app.get('/multimetrovalor', (req, res) => {
+  if (mqttData2) {
+    console.log('Conectado');
+    const data = { data: mqttData2 };
+    res.json(data);
+    res.render('index', {data})
+
+  } else {
+    res.status(404).json({ error: 'No se han recibido datos MQTT' });
+  }
+});
+
+app.get('/multimetroluz', (req, res) => {
+  if (mqttDataLuz) {
+    console.log('Conectado');
+    const data = { data: mqttDataLuz };
+    res.json(data);
+    res.render('index', {data})
+
+  } else {
+    res.status(404).json({ error: 'No se han recibido datos MQTT' });
+  }
+});
+
+app.get('/multimetroHz', (req, res) => {
+  if (mqttDataHz) {
+    console.log('Conectado');
+    const data = { data: mqttDataHz };
+    res.json(data);
+    res.render('index', {data})
+
+  } else {
+    res.status(404).json({ error: 'No se han recibido datos MQTT' });
+  }
+});
+
+app.get('/multimetroMv', (req, res) => {
+  if (mqttDataMv) {
+    console.log('Conectado');
+    const data = { data: mqttDataMv };
+    res.json(data);
+    res.render('index', {data})
+
+  } else {
+    res.status(404).json({ error: 'No se han recibido datos MQTT' });
+  }
+});
+
+app.get('/multimetroV', (req, res) => {
+  if (mqttDataV) {
+    console.log('Conectado');
+    const data = { data: mqttDataV };
+    res.json(data);
+    res.render('index', {data})
+
+  } else {
+    res.status(404).json({ error: 'No se han recibido datos MQTT' });
+  }
+});
 
 
 // Ruta para enviar un mensaje MQTT utilizando POST
@@ -97,6 +200,117 @@ app.post('/conectar', (req, res) => {
   });
 });
 
+
+// Ruta para enviar un mensaje MQTT utilizando POST
+app.post('/conectarmultivalor', (req, res) => {
+  // Obtener el mensaje desde el cuerpo de la solicitud
+  const mensaje = req.body.mensaje; 
+
+  // Verificar si se proporcionó un mensaje
+  if (!mensaje) {
+    return res.status(400).json({ error: 'Se requiere un mensaje en el cuerpo de la solicitud' });
+  }
+
+  // Publicar el mensaje en el tópico MQTT deseado
+  mqttClient.publish('test/multimetro/valores', mensaje, { qos: 2 }, (error) => {
+    if (!error) {
+      console.log('Mensaje MQTT enviado con éxito valor:', mensaje);
+      res.json({ mensaje: 'Mensaje MQTT enviado con éxito' });
+    } else {
+      console.error('Error al enviar el mensaje MQTT:', error);
+      res.status(500).json({ error: 'Error al enviar el mensaje MQTT' });
+    }
+  });
+});
+
+// Ruta para enviar un mensaje MQTT utilizando POST
+app.post('/luz', (req, res) => {
+  // Obtener el mensaje desde el cuerpo de la solicitud
+  const mensaje = req.body.mensaje; 
+
+  // Verificar si se proporcionó un mensaje
+  if (!mensaje) {
+    return res.status(400).json({ error: 'Se requiere un mensaje en el cuerpo de la solicitud' });
+  }
+
+  // Publicar el mensaje en el tópico MQTT deseado
+  mqttClient.publish('test/multimetro/luz', mensaje, { qos: 2 }, (error) => {
+    if (!error) {
+      console.log('Mensaje MQTT enviado con éxito luz: ', mensaje);
+      res.json({ mensaje: 'Mensaje MQTT enviado con éxito' });
+    } else {
+      console.error('Error al enviar el mensaje MQTT:', error);
+      res.status(500).json({ error: 'Error al enviar el mensaje MQTT' });
+    }
+  });
+});
+
+
+// Ruta para enviar un mensaje MQTT utilizando POST
+app.post('/Hz', (req, res) => {
+  // Obtener el mensaje desde el cuerpo de la solicitud
+  const mensaje = req.body.mensaje; 
+
+  // Verificar si se proporcionó un mensaje
+  if (!mensaje) {
+    return res.status(400).json({ error: 'Se requiere un mensaje en el cuerpo de la solicitud' });
+  }
+
+  // Publicar el mensaje en el tópico MQTT deseado
+  mqttClient.publish('test/multimetro/Hz', mensaje, { qos: 2 }, (error) => {
+    if (!error) {
+      console.log('Mensaje MQTT enviado con éxito luz: ', mensaje);
+      res.json({ mensaje: 'Mensaje MQTT enviado con éxito' });
+    } else {
+      console.error('Error al enviar el mensaje MQTT:', error);
+      res.status(500).json({ error: 'Error al enviar el mensaje MQTT' });
+    }
+  });
+});
+
+// Ruta para enviar un mensaje MQTT utilizando POST
+app.post('/Mv', (req, res) => {
+  // Obtener el mensaje desde el cuerpo de la solicitud
+  const mensaje = req.body.mensaje; 
+
+  // Verificar si se proporcionó un mensaje
+  if (!mensaje) {
+    return res.status(400).json({ error: 'Se requiere un mensaje en el cuerpo de la solicitud' });
+  }
+
+  // Publicar el mensaje en el tópico MQTT deseado
+  mqttClient.publish('test/multimetro/Mv', mensaje, { qos: 2 }, (error) => {
+    if (!error) {
+      console.log('Mensaje MQTT enviado con éxito luz: ', mensaje);
+      res.json({ mensaje: 'Mensaje MQTT enviado con éxito' });
+    } else {
+      console.error('Error al enviar el mensaje MQTT:', error);
+      res.status(500).json({ error: 'Error al enviar el mensaje MQTT' });
+    }
+  });
+});
+
+// Ruta para enviar un mensaje MQTT utilizando POST
+app.post('/V', (req, res) => {
+  // Obtener el mensaje desde el cuerpo de la solicitud
+  const mensaje = req.body.mensaje; 
+
+  // Verificar si se proporcionó un mensaje
+  if (!mensaje) {
+    return res.status(400).json({ error: 'Se requiere un mensaje en el cuerpo de la solicitud' });
+  }
+
+  // Publicar el mensaje en el tópico MQTT deseado
+  mqttClient.publish('test/multimetro/V', mensaje, { qos: 2 }, (error) => {
+    if (!error) {
+      console.log('Mensaje MQTT enviado con éxito luz: ', mensaje);
+      res.json({ mensaje: 'Mensaje MQTT enviado con éxito' });
+    } else {
+      console.error('Error al enviar el mensaje MQTT:', error);
+      res.status(500).json({ error: 'Error al enviar el mensaje MQTT' });
+    }
+  });
+});
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
