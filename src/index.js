@@ -10,6 +10,9 @@ let mqttDataLuz = null;
 let mqttDataHz = null;
 let mqttDataMv = null;
 let mqttDataV = null;
+let mqttDataDireccionIzq = null;
+let mqttDataDireccionDere = null;
+let mqttDataB = null;
 
 // Configuración de CORS
 const corsOptions = {
@@ -52,20 +55,29 @@ mqttClient.on('error', (error) => {
 //   }
 // });
 const mqttCon = mqttClient.subscribe('test/server', { qos: 2 });
-
 const mqttSus = mqttClient.subscribe('test/server/channel_A', { qos: 2});
-
+const mqttSusB = mqttClient.subscribe('test/server/channel_B', { qos: 2});
 const mqttConf = mqttClient.subscribe('test/multimetro', { qos: 2 });
 const mqtMultiValor = mqttClient.subscribe('test/multimetro/valores', { qos: 2});
 const mqtMultiLuz = mqttClient.subscribe('test/multimetro/luz', { qos: 2});
 const mqtMultiMv = mqttClient.subscribe('test/multimetro/Mv', { qos: 2});
 const mqtMultiHz = mqttClient.subscribe('test/multimetro/Hz', { qos: 2});
 const mqtMultiV = mqttClient.subscribe('test/multimetro/V', { qos: 2});
+const mqtMultiDireccionIzq = mqttClient.subscribe('test/multimetro/izquierda', { qos: 2});
+const mqtMultiDireccionDere = mqttClient.subscribe('test/multimetro/derecha', { qos: 2});
+
+
 // Manejar mensajes MQTT cuando se reciban
 mqttSus.on('message', (topic, message) => {
   if (topic === 'test/server/channel_A') {
     mqttData = message.toString();
     console.log('Mensajes: ',mqttData);
+  }
+});
+mqttSusB.on('message', (topic, message) => {
+  if (topic === 'test/server/channel_B') {
+    mqttDataB = message.toString();
+    console.log('MensajesB: ',mqttDataB);
   }
 });
 
@@ -102,6 +114,19 @@ mqtMultiV.on('message', (topic, message) => {
     console.log('Mensajes: ',mqttDataV);
   }
 });
+mqtMultiDireccionIzq.on('message', (topic, message) => {
+  if (topic === 'test/multimetro/izquierda') {
+    mqttDataDireccionIzq = message.toString();
+    console.log('Mensajes: ',mqttDataDireccionIzq);
+  }
+});
+mqtMultiDireccionDere.on('message', (topic, message) => {
+  if (topic === 'test/multimetro/derecha') {
+    mqttDataDireccionDere = message.toString();
+    console.log('Mensajes: ',mqttDataDireccionDere);
+  }
+});
+
 
 
 // Ruta de ejemplo para obtener datos MQTT como respuesta JSON
@@ -112,6 +137,26 @@ app.get('/picoscope', (req, res) => {
     res.json(data);
     res.render('index', {data})
 
+  } else {
+    res.status(404).json({ error: 'No se han recibido datos MQTT' });
+  }
+});
+
+app.get('/picoscopeA', (req, res) => {
+  if (mqttData) {
+    // Asegúrate de que mqttData sea un arreglo
+    const data = Array.isArray(mqttData) ? mqttData : [mqttData];
+    res.json(data);
+  } else {
+    res.status(404).json({ error: 'No se han recibido datos MQTT' });
+  }
+});
+
+app.get('/picoscopeB', (req, res) => {
+  if (mqttDataB) {
+    // Asegúrate de que mqttData sea un arreglo
+    const data = Array.isArray(mqttDataB) ? mqttDataB : [mqttDataB];
+    res.json(data);
   } else {
     res.status(404).json({ error: 'No se han recibido datos MQTT' });
   }
@@ -311,6 +356,51 @@ app.post('/V', (req, res) => {
     }
   });
 });
+
+// Ruta para enviar un mensaje MQTT utilizando POST
+app.post('/izquierda', (req, res) => {
+  // Obtener el mensaje desde el cuerpo de la solicitud
+  const mensaje = req.body.mensaje; 
+
+  // Verificar si se proporcionó un mensaje
+  if (!mensaje) {
+    return res.status(400).json({ error: 'Se requiere un mensaje en el cuerpo de la solicitud' });
+  }
+
+  // Publicar el mensaje en el tópico MQTT deseado
+  mqttClient.publish('test/multimetro/izquierda', mensaje, { qos: 2 }, (error) => {
+    if (!error) {
+      console.log('Mensaje MQTT enviado con éxito luz: ', mensaje);
+      res.json({ mensaje: 'Mensaje MQTT enviado con éxito' });
+    } else {
+      console.error('Error al enviar el mensaje MQTT:', error);
+      res.status(500).json({ error: 'Error al enviar el mensaje MQTT' });
+    }
+  });
+});
+
+// Ruta para enviar un mensaje MQTT utilizando POST
+app.post('/derecha', (req, res) => {
+  // Obtener el mensaje desde el cuerpo de la solicitud
+  const mensaje = req.body.mensaje; 
+
+  // Verificar si se proporcionó un mensaje
+  if (!mensaje) {
+    return res.status(400).json({ error: 'Se requiere un mensaje en el cuerpo de la solicitud' });
+  }
+
+  // Publicar el mensaje en el tópico MQTT deseado
+  mqttClient.publish('test/multimetro/derecha', mensaje, { qos: 2 }, (error) => {
+    if (!error) {
+      console.log('Mensaje MQTT enviado con éxito luz: ', mensaje);
+      res.json({ mensaje: 'Mensaje MQTT enviado con éxito' });
+    } else {
+      console.error('Error al enviar el mensaje MQTT:', error);
+      res.status(500).json({ error: 'Error al enviar el mensaje MQTT' });
+    }
+  });
+});
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
